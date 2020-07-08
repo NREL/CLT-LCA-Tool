@@ -1,7 +1,7 @@
 ######################################################################################################
 # import all required packages and functions
 from Functions import get_GM_API_Key
-from Functions import lumberspeciespropoertiesprocessing
+from Functions import lumber_species_properties_processing
 from Functions import calculate_lumber_impact
 from Functions import calculate_distance
 import googlemaps
@@ -15,202 +15,251 @@ import numpy
 
 # from itertools import tee
 
-######################################################################################################
+####################################################################################################
+
 ###import api_key from text file and configure the key
 apikey_text = get_GM_API_Key()
 gmaps.configure(api_key=apikey_text)
-######################################################################################################
 
-###temporary input panel to get input from the user
+####################################################################################################
 
-# location = input("Enter the location of the building")
-
-
-# timber_type = input("Enter the desired timber type to be used in the CLT panel")
-
-# building_choice = input("Enter the option number of the building from the descriptions")
+###add input panel here
+####assume Katerra CLT building for now
 building_choice = 1
-###assume Katerra CLT building for now
-
-
-###below inputs not needed for now as building inventory is directly taken as a case study from Katerra
-# square_footage = float(input("Enter the total square footage of the building"))
-##square_footage = float(5000)
-
-# no_of_floors = int(input("Enter the number of floors in the building"))
-###no_of_floors = 8
-
-
-#######################################################################################################
-####function to get cooridantes of a place
-# Import required library
-# loc = input("Enter place: ")
-# def get_coordinates(location, apikey=apikey_text):
-#     place = location
-#     #Place your google map API_KEY to a variable
-#     #Store google geocoding api url in a variable
-#     url = 'https://maps.googleapis.com/maps/api/geocode/json?'
-#     # call get method of request module and store respose object
-#     CO = requests.get(url + 'address =' + place + '&key =' + apikey)
-#     #Get json format result from the above response object
-#     coordinates = CO.json()
-#     #print the value of res
-#     return coordinates
-
-#######################################################################################################
-###get coordinates of SF
-# building_location_coordinates = get_coordinates(loc)
-# print(building_location_coordinates)
-#######################################################################################################
-
-###function to estimate the amount of materials needed
-###return list of amounts
-
-###temporary list to use
-material_amounts_data = [['Concrete', 1], ['Timber', 2], ['Material 1', 3], ['Material 2', 4], ['Material 3', 5]]
-material_amounts = pd.DataFrame(material_amounts_data, columns=['Material', 'Amounts'])
-#######################################################################################################
-###Excel file inputs
-###import input output analysis file
-input_output_energy = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/Input_Output_File.xlsx")
-Lumber_species_properties = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/CLT_ Timber_types.xlsx',
-                                          sheet_name='ALSC PS 20 Lumber Species', skiprows=[0])
-###Read excel file for lumber properties and GIS timber key
-Lumber_species_Data_key = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/CLT_ Timber_types.xlsx',
-                                        sheet_name='GIS Data Key')
-Lumber_production_impact = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx',
-                                         sheet_name='Lumber Production')
-CLT_mfc_impact = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx',
-                               sheet_name='CLT Manufacturing')
-CLT_trans_impact = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx',
-                               sheet_name='Transportation')
-Filtered_GIS_Data = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/SampleGISDataFiltered - Copy.xlsx")
-
-Sawmills_data_Washington = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/mill2005w.xlsx",sheet_name='Washington')
-pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/mill2005w.xlsx",sheet_name='Washington')
-GIS_Data_Key = pd.DataFrame(
-    pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/SampleGISData - Copy.xlsx", sheet_name="Sheet2"))
-State_Region_Key = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='Sheet1')
-Transport_impact_factor = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='Transportation')
-#######################################################################################################
-###form a results dataframe
-Output = pd.DataFrame(input_output_energy["Input"])
-
-Output["Energy Input"] = material_amounts["Amounts"] * input_output_energy["Energy Input"]
-
-########################################################################################################
-
-# Waste_or_coproducts_percentage = float(input("Enter the % in weight of wood which goes into co-products in the CLT manufacturing process"))
-
-##default value for now based on the Katerra paper
-
-##process Lumber Species Properties
-
-##########################################################################################################
-
-Lumber_species_properties = lumberspeciespropoertiesprocessing(16, Lumber_species_properties)
-
-##########################################################################################################
-###calculate lumber production impacts for different tree species per m3 of CLT
-
-Lumber_production_impact_by_species = Lumber_species_properties['Total Green Wood Vol Req (odkg/m3)'] * \
-                                      Lumber_production_impact[
-                                          'Sawn lumber, softwood, planed, kiln dried, at planer, NE-NC/m3/RNA']
-
-# Denver = '39.7392, -104.9903'
-building_location = [39.7392, -104.9903]
 building_location1 = '39.7392, -104.9903'
-timber_type = 'Douglas-fir'
+CLT_Sourcing_state = 'Washington'
+timber_type = 'Douglas Fir'
 timber_type_code = 29  ##write code to lookup the code
-# CLT_Mill_location = '42.8621, -112.4506'
-CLT_Mill_location =[42.8621, -112.4506]  ### in Idaho
-CLT_Mill_location1 ='42.8621, -112.4506'
-timber_source_state = 'Washington'
-##########################################################################################################
-##calculate total lumber prodution impact
-total_l_i, matrix_new = calculate_lumber_impact(CLT_required,Filtered_GIS_Data, timber_type, CLT_Mill_location, State_Region_Key,Lumber_production_impact)
+CLT_Mill_location1 ='42.8621, -112.4506' ### in Idaho
 
-CLT_mfc_impact["Total Impact"] = CLT_required * CLT_mfc_impact['Impact (kg CO2 eq/m3)']
+####################################################################################################
 
-#calculate total manufacturing impact
-total_mfc_impact = CLT_mfc_impact["Total Impact"].sum()
+###import required Excel File/Sheets
 
-# calculate transportation impact from mill to building
+###this sheet can map each state to its particular region: PNW, SE, NE-NC, INW, etc. ###
+state_region_map = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx", sheet_name='State_Region_Map')
 
-##calculate distance between the CLT mill and the building location
-distance_CLTMill_BuildingLoc = calculate_distance(CLT_Mill_location1, building_location1, apikey_text)
+###this sheet has impacts of growing lumber in differnet areas ###
+Lumber_production_impact = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='Lumber Production- Energy')
 
-###calculate weight of CLT transported from the mill to the building location
-total_weight_CLT = CLT_required * Lumber_species_properties['Weight (kg/m3) : 12%'][Lumber_species_properties.index[Lumber_species_properties['Forest Type Code'] == timber_type_code]]
-total_tonne_km = total_weight_CLT * distance_CLTMill_BuildingLoc
-total_trans_impact = total_tonne_km * float(CLT_trans_impact['Emissions per tonne-km'])
-total_CO2_impact = total_mfc_impact + total_trans_impact
+###this sheet has inventory of manufacturing CLT###                                                                                             ####complete this process####
+CLT_manufacturing_inventory = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='CLT Manufacturing Inventory')
 
-#function to get the building inventory
-##building_choice is 1 for the Katerra building
+###this sheet has impact values for electricity production in US states
+Electricity_impact_energy = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='Electricity by state- Energy', nrows=53)
+Electricity_impact_CO2 = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='Electricity by state- CO2', nrows=53)
+
+###read in weight volume properties of timber
+#in future, use this file for calculation using the waste percentage and delete the directly read in file.
+#Lumber_species_properties = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/CLT_ Timber_types.xlsx', sheet_name='ALSC PS 20 Lumber Species', skiprows=[0])
+lumber_species_properties_processed = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/CLT_ Timber_types.xlsx', sheet_name='ALSC PS 20 Lumber Species', skiprows=[0])
+
+GIS_Data_with_sawmills = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/SampleGISDataFiltered - Copy2.xlsx")
+
+CLT_Manufacturing_energy_impact_factors = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='CLT Manufacturing- Energy')
+
+CLT_Manufacturing_CO2_impact_factors = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='CLT Manufacturing- CO2')
+
+transportation_energy_impact_factors = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='Transportation- Energy')
+
+transportation_CO2_impact_factors = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/LCA_Impact_Values.xlsx', sheet_name='Transportation- CO2')
+
+material_transport_distances = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/BuildingConfigurations.xlsx", sheet_name='Material Transport')
+###################################################################################################
+
+###derived variables###
+CLT_Region = state_region_map.loc[state_region_map.State == CLT_Sourcing_state, 'Region'].item()
+
+CLTM_to_Building_Distance = calculate_distance(CLT_Mill_location1, building_location1, apikey_text)
+
+###################################################################################################
+
+###Katerra = building choice 1 ###
+
 if building_choice == 1:
+
     ###read in the materials inventory for the CLT building
-    building_inventories_info = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/BuildingConfigurations.xlsx", sheet_name='Building-Katerra', usecols='A:B', nrows=6, header=None)
-    building_inventories_table = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/BuildingConfigurations.xlsx", sheet_name='Building-Katerra', skiprows=7)
-    ###read in the multiplier
-    sq_ft_ratio = building_inventories_info.iloc[4][6]
+    ###this sheet has basic building data : name, area, location, no of storeys, etc. ###
+    building_inventories_info_CLT_building = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/BuildingConfigurations.xlsx", sheet_name='Building-Katerra', usecols='A:B', nrows=6, header=None)
+
+    ###this sheet has the bill of materials###
+    building_inventories_table_CLT_building = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/BuildingConfigurations.xlsx", sheet_name='Building-Katerra', skiprows=7)
+
+    ###this sheet has the impacts of building materials
+    building_material_impacts = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/BuildingConfigurations.xlsx", sheet_name='Material Impacts')
+
+    ###read in the sq ft
+    sq_ft_CLT_building = building_inventories_info_CLT_building.iloc[4][1]
 
     ###calculate total CLT required for the building
-    CLT_required = building_inventories_table['Normalized Quantity'][building_inventories_table.index[building_inventories_table['Material'] == 'CLT']].sum()*sq_ft_ratio
+    CLT_required = building_inventories_table_CLT_building.loc[building_inventories_table_CLT_building.Material == "CLT", 'Normalized_Quantity'].sum()
+
+################################################################################################################
+###create results dataframes ###
+
+energy_impacts_CLT = pd.DataFrame(columns=["Phase", "Renewable, wind, solar, geothe", "Renewable, biomass", "Non renewable, fossil", "Non-renewable, nuclear", "Renewable, water", "Non-renewable, biomass"])
+phases_1 = ["Lumber Production", "Transport to CLT Mill", "CLT Manufacturing", "Transport to building site"]
+energy_impacts_CLT["Phase"] = phases_1
+
+energy_impacts_CLT_building = pd.DataFrame(columns=["Phase", "Renewable, wind, solar, geothe", "Renewable, biomass", "Non renewable, fossil", "Non-renewable, nuclear", "Renewable, water", "Non-renewable, biomass"])
+phases_2 = ["A1-A3", "A4", "A5"]
+energy_impacts_CLT_building["Phase"] = phases_2
+
+################################################################################################################
+
+###Lumber production impact###
+
+waste_percentage = 16
+
+#for now, this file has been directly read in through Excel. In further iteration, make this a variable by using the waste_percentage.
+
+#lumber_species_properties_processed = lumber_species_properties_processing(waste_percentage, Lumber_species_properties)
+
+###add values for lumber trasnport and processing
+
+lumber_required = CLT_required * lumber_species_properties_processed.loc[lumber_species_properties_processed["ALSC PS 20 Commercial Species"] == timber_type, 'Total 12% Wood Vol Req (m3/m3 CLT)'].item()
+
+energy_impacts_CLT[1][1] = lumber_required * Lumber_production_impact.loc[Lumber_production_impact["Region"] == CLT_Region, "Renewable, wind, solar, geothe"].item()
+energy_impacts_CLT[2][1] = lumber_required * Lumber_production_impact.loc[Lumber_production_impact["Region"] == CLT_Region, "Renewable, biomass"].item()
+energy_impacts_CLT[3][1] = lumber_required * Lumber_production_impact.loc[Lumber_production_impact["Region"] == CLT_Region, "Non renewable, fossil"].item()
+energy_impacts_CLT[4][1] = lumber_required * Lumber_production_impact.loc[Lumber_production_impact["Region"] == CLT_Region, "Non-renewable, nuclear"].item()
+energy_impacts_CLT[5][1] = lumber_required * Lumber_production_impact.loc[Lumber_production_impact["Region"] == CLT_Region, "Renewable, water"].item()
+energy_impacts_CLT[6][1] = lumber_required * Lumber_production_impact.loc[Lumber_production_impact["Region"] == CLT_Region, "Non-renewable, biomass"].item()
+
+################################################################################################################
+
+###Lumber transportation impact###
+
+####get dataframe file of GIS Data with appended sawmills and distances (file has been read in at the beginning of the code for now, change to read according to the state later
+
+###this loop is not needed maybe
+GIS_Data_with_sawmills['Distance_SM_CLTM'] = ''
+distance_forest_sawmill = 0
+no_of_calc_forest_sawmill = 0
+for index, row in GIS_Data_with_sawmills.iterrows():
+    if row["ForestType"] == timber_type:
+        distance_forest_sawmill = distance_forest_sawmill + sum(row["Distance"])
+        no_of_calc_forest_sawmill = no_of_calc_forest_sawmill + len(row["Distance"])
+
+avg_distance_forest_sawmill = distance_forest_sawmill/no_of_calc_forest_sawmill
 
 
-    ###push back this idea for now; this detail can ba added later
-    ####sq_ft_per_floor_ratio = float(square_footage/no_of_floors/building_inventories_info.iloc[4][1]*building_inventories_info.iloc[5][1])
-    ##depend_on_square_footage = ['Beams and columns', 'Columns', 'Connections', 'Girders', 'Fireproofing paint', 'BRBs', 'Shear walls', 'Exterior glazing', 'Exterior mullions', 'Insulation', 'Exterior wall', 'Air barrier', 'Insulated panel', 'Hat channels', 'Finish', 'Roof CLT', 'Underlayment membrane', 'Insulation build-up', 'Adhesive', 'Rigid board', 'Waterproofing', 'Insulation']
-    ##depend_on_sq_ft_per_floor = ['Slab', 'Topping slab', 'Acoustic underlayment', 'Column footings', 'Mat foundation', 'Slab-on-grade', 'Slab-on-grade underlayment', 'Subgrade columns', 'Subgrade walls and footings', 'Suspended slabs', 'Carrier rails']
+###get from MappintSMtoCLTM function: avg_sawmill_CLT_mill_distance
 
-    ##building_inventories_table['Actual Energy Impact'] = ''
-    ##building_inventories_table['Actual CO2 Impact'] = ''
+############Lumber transport to CLT Mill  ###############add truck loading factors#################****************
+avg_sawmill_CLT_mill_distance = 2000
+if avg_distance_forest_sawmill <= 200:   ###update the number
+    energy_impacts_CLT[1][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[1][2]
+    energy_impacts_CLT[2][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[2][2]
+    energy_impacts_CLT[3][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[3][2]
+    energy_impacts_CLT[4][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[4][2]
+    energy_impacts_CLT[5][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[5][2]
+    energy_impacts_CLT[6][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[6][2]
 
-    ###code debugger: ignore
-    ###print('a')
-    ##################
+if avg_distance_forest_sawmill > 200:
+    energy_impacts_CLT[1][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[1][1]
+    energy_impacts_CLT[2][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[2][1]
+    energy_impacts_CLT[3][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[3][1]
+    energy_impacts_CLT[4][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[4][1]
+    energy_impacts_CLT[5][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[5][1]
+    energy_impacts_CLT[6][2] = avg_distance_forest_sawmill * transportation_energy_impact_factors[6][1]
 
-    ####for index, row in building_inventories_table.iterrows():
-        ###code debugger: ignore
-        ###print('b')
-        ############
+######CLT transport to building site########  ###############add truck loading factors#################****************
 
-        # if row['Item'] in depend_on_square_footage:
-        #     building_inventories_table['Actual Energy Impact'][index] = building_inventories_table['Impact: Energy'][index]*sq_ft_ratio
-        #     building_inventories_table['Actual CO2 Impact'][index] = building_inventories_table['Impact: CO2'][
-        #                                                                     index] * sq_ft_ratio
-        #     print('c')
-        # if row['Item'] in depend_on_sq_ft_per_floor:
-        #     building_inventories_table['Actual Energy Impact'][index] = building_inventories_table['Impact: Energy'][
-        #                                                                     index] * sq_ft_per_floor_ratio
-        #     building_inventories_table['Actual CO2 Impact'][index] = building_inventories_table['Impact: CO2'][
-        #                                                                     index] * sq_ft_per_floor_ratio
-        #     print('d')
-    # Energy_impact_except_CLT = building_inventories_table['Actual Energy Impact'].sum()
-    # CO2_impact_except_CLT = building_inventories_table['Actual CO2 Impact'].sum()
+if CLTM_to_Building_Distance <= 200:   ###update the number
+    energy_impacts_CLT[1][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[1][2]
+    energy_impacts_CLT[2][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[2][2]
+    energy_impacts_CLT[3][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[3][2]
+    energy_impacts_CLT[4][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[4][2]
+    energy_impacts_CLT[5][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[5][2]
+    energy_impacts_CLT[6][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[6][2]
 
-    ##now find the total impact due to materials other than CLT
-    ##these are stored in the
+if avg_distance_forest_sawmill > 200:
+    energy_impacts_CLT[1][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[1][1]
+    energy_impacts_CLT[2][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[2][1]
+    energy_impacts_CLT[3][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[3][1]
+    energy_impacts_CLT[4][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[4][1]
+    energy_impacts_CLT[5][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[5][1]
+    energy_impacts_CLT[6][2] = CLTM_to_Building_Distance * transportation_energy_impact_factors[6][1]
+
+######CLT Manufacturing Impact#####
+
+CLT_Mfc_Electricity = CLT_manufacturing_inventory.loc[CLT_manufacturing_inventory["Input"] == "Electricity"].sum()
+CLT_Mfc_Energy_Impacts = pd.DataFrame(columns = ["Renewable, wind, solar, geothe", "Renewable, biomass", "Non renewable, fossil", "Non-renewable, nuclear", "Renewable, water", "Non-renewable, biomass"])
+CLT_Mfc_Energy_Impacts = pd.concat(CLT_manufacturing_inventory, CLT_Mfc_Energy_Impacts)
+
+for index, row in CLT_Mfc_Energy_Impacts.iterrows():
+    if row["Input"] != "Electricity":
+        CLT_Mfc_Energy_Impacts[4][index] = CLT_Mfc_Energy_Impacts[3][index] * CLT_Manufacturing_energy_impact_factors[CLT_Manufacturing_energy_impact_factors["Material"] == row["Input"]][1]
+        CLT_Mfc_Energy_Impacts[5][index] = CLT_Mfc_Energy_Impacts[3][index] * CLT_Manufacturing_energy_impact_factors[CLT_Manufacturing_energy_impact_factors["Material"] == row["Input"]][2]
+        CLT_Mfc_Energy_Impacts[6][index] = CLT_Mfc_Energy_Impacts[3][index] * CLT_Manufacturing_energy_impact_factors[CLT_Manufacturing_energy_impact_factors["Material"] == row["Input"]][3]
+        CLT_Mfc_Energy_Impacts[7][index] = CLT_Mfc_Energy_Impacts[3][index] * CLT_Manufacturing_energy_impact_factors[CLT_Manufacturing_energy_impact_factors["Material"] == row["Input"]][4]
+        CLT_Mfc_Energy_Impacts[8][index] = CLT_Mfc_Energy_Impacts[3][index] * CLT_Manufacturing_energy_impact_factors[CLT_Manufacturing_energy_impact_factors["Material"] == row["Input"]][5]
+        CLT_Mfc_Energy_Impacts[9][index] = CLT_Mfc_Energy_Impacts[3][index] * CLT_Manufacturing_energy_impact_factors[CLT_Manufacturing_energy_impact_factors["Material"] == row["Input"]][6]
+
+    if row["Input"] == "Electricity":
+        CLT_Mfc_Energy_Impacts[4][index] = CLT_Mfc_Energy_Impacts[3][index] * Electricity_impact_energy[Electricity_impact_energy["State"] == CLT_Region][1]
+        CLT_Mfc_Energy_Impacts[5][index] = CLT_Mfc_Energy_Impacts[3][index] * Electricity_impact_energy[Electricity_impact_energy["State"] == CLT_Region][2]
+        CLT_Mfc_Energy_Impacts[6][index] = CLT_Mfc_Energy_Impacts[3][index] * Electricity_impact_energy[Electricity_impact_energy["State"] == CLT_Region][3]
+        CLT_Mfc_Energy_Impacts[7][index] = CLT_Mfc_Energy_Impacts[3][index] * Electricity_impact_energy[Electricity_impact_energy["State"] == CLT_Region][4]
+        CLT_Mfc_Energy_Impacts[8][index] = CLT_Mfc_Energy_Impacts[3][index] * Electricity_impact_energy[Electricity_impact_energy["State"] == CLT_Region][5]
+        CLT_Mfc_Energy_Impacts[9][index] = CLT_Mfc_Energy_Impacts[3][index] * Electricity_impact_energy[Electricity_impact_energy["State"] == CLT_Region][6]
 
 
-###function to ......
-##### if the forest cell is selected, calculate the distances based on the sawmills in the dictionary
-# for row, index in Filtered_GIS_Data.iterrows():
-#     if (row['ForestType'] == timber_type) and (row['State'] == timber_source_state):
+###assign values in the matrix
+energy_impacts_CLT[1][2] = CLT_Mfc_Energy_Impacts["Renewable, wind, solar, geothe"].sum()
+energy_impacts_CLT[2][2] = CLT_Mfc_Energy_Impacts["Renewable, biomass"].sum()
+energy_impacts_CLT[3][2] = CLT_Mfc_Energy_Impacts["Non renewable, fossil"].sum()
+energy_impacts_CLT[4][2] = CLT_Mfc_Energy_Impacts["Non-renewable, nuclear"].sum()
+energy_impacts_CLT[5][2] = CLT_Mfc_Energy_Impacts["Renewable, water"].sum()
+energy_impacts_CLT[6][2] = CLT_Mfc_Energy_Impacts["Non-renewable, biomass"].sum()
 
-###assign sawmills for each figure id
-for index, row in Filtered_GIS_Data.iterrows():
-    list_sawmills = list()
-    cell_loc = str(row['G1000_latdd']) + ', ' + str(row['G1000_longdd'])
-    for index1, row1 in Sawmills_data_Washington.iterrows():
-        sawmill_loc = str(row1['LAT']) + ', ' + str(row1['LON'])
-        distance_cell_sawmill = calculate_distance(cell_loc, sawmill_loc, apikey_text)
-        if distance_cell_sawmill <=150:
-            list_sawmills.append(row1['MILL2005_1'])
-    row['Sawmills'] = list_sawmills
+################## CLT Building Materials Impacts#################
+
+CLT_building_materials_energy_impacts = pd.DataFrame(columns = ["Renewable, wind, solar, geothe", "Renewable, biomass", "Non renewable, fossil", "Non-renewable, nuclear", "Renewable, water", "Non-renewable, biomass"])
+
+CLT_building_materials_mfc_energy_impacts = pd.concat(building_inventories_table_CLT_building, CLT_building_materials_energy_impacts)
 
 
 
-###def findmills (x,y,z):
+for index, row in CLT_building_materials_mfc_energy_impacts.iterrows():
+
+    if row["Material"] != "CLT":
+        CLT_building_materials_mfc_energy_impacts[8][index] = row['Normalized Quantity'] * building_material_impacts.loc[building_material_impacts.LCA_Material_Name == row['LCA_Material_Name']][1]
+        CLT_building_materials_mfc_energy_impacts[9][index] = row['Normalized Quantity'] * building_material_impacts.loc[building_material_impacts.LCA_Material_Name == row['LCA_Material_Name']][2]
+        CLT_building_materials_mfc_energy_impacts[10][index] = row['Normalized Quantity'] * building_material_impacts.loc[building_material_impacts.LCA_Material_Name == row['LCA_Material_Name']][3]
+        CLT_building_materials_mfc_energy_impacts[11][index] = row['Normalized Quantity'] * building_material_impacts.loc[building_material_impacts.LCA_Material_Name == row['LCA_Material_Name']][4]
+        CLT_building_materials_mfc_energy_impacts[12][index] = row['Normalized Quantity'] * building_material_impacts.loc[building_material_impacts.LCA_Material_Name == row['LCA_Material_Name']][5]
+        CLT_building_materials_mfc_energy_impacts[13][index] = row['Normalized Quantity'] * building_material_impacts.loc[building_material_impacts.LCA_Material_Name == row['LCA_Material_Name']][6]
+
+
+    if row["Material"] == "CLT":
+        ###delete this particular row
+
+####add row for total of all
+
+CLT_building_materials_trans_energy_impacts = pd.concat(building_inventories_table_CLT_building, CLT_building_materials_energy_impacts)
+
+for index, row in CLT_building_materials_trans_energy_impacts.iterrows():
+    if row["Material"] != "CLT":
+        material_row_index = material_transport_distances.loc[material_transport_distances.LCA_Material_Name == row["Material"]]
+
+    #### add impacts nos for road and rail
+        CLT_building_materials_trans_energy_impacts[8][index] = row['Normalized Quantity'] * material_transport_distances["Factor"][material_row_index] * (material_transport_distances["Road"][material_row_index] + material_transport_distances["Rail"][material_row_index])
+        CLT_building_materials_trans_energy_impacts[9][index] = row['Normalized Quantity'] * material_transport_distances["Factor"][material_row_index] * (material_transport_distances["Road"][material_row_index] + material_transport_distances["Rail"][material_row_index])
+        CLT_building_materials_trans_energy_impacts[10][index] = row['Normalized Quantity'] * material_transport_distances["Factor"][material_row_index] * (material_transport_distances["Road"][material_row_index] + material_transport_distances["Rail"][material_row_index])
+        CLT_building_materials_trans_energy_impacts[11][index] = row['Normalized Quantity'] * material_transport_distances["Factor"][material_row_index] * (material_transport_distances["Road"][material_row_index] + material_transport_distances["Rail"][material_row_index])
+        CLT_building_materials_trans_energy_impacts[12][index] = row['Normalized Quantity'] * material_transport_distances["Factor"][material_row_index] * (material_transport_distances["Road"][material_row_index] + material_transport_distances["Rail"][material_row_index])
+        CLT_building_materials_trans_energy_impacts[13][index] = row['Normalized Quantity'] * material_transport_distances["Factor"][material_row_index] * (material_transport_distances["Road"][material_row_index] + material_transport_distances["Rail"][material_row_index])
+
+    if row["Material"] == "CLT":
+        ###delete this particular row
+
+####add row for total of all
+
+##########################################
+CLT_building_materials_mfc_energy_impacts = pd.concat(building_inventories_table_CLT_building, CLT_building_materials_mfc_energy_impacts)
+
+
+
 

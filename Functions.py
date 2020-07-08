@@ -34,14 +34,28 @@ def calculate_distance(Origin, Destination, apikey):
 
 ###################################################################################
 ###processes the dataframe from the spreadsheet
-def lumberspeciespropoertiesprocessing(Wastepercentage,Lumber_species_properties):
+def lumber_species_properties_processing (Wastepercentage ,Lumber_species_properties) :
+
+    ##read in the inputs
     Waste_or_coproducts_percentage = Wastepercentage
     Lumber_species_properties = Lumber_species_properties
-    Lumber_species_properties['Final Product Weight (odkg/m3)'] = Lumber_species_properties['Specific Gravity : 12%'] * 1000
-    Lumber_species_properties['Co Products Weight (odkg/m3)'] = Lumber_species_properties['Final Product Weight (odkg/m3)'] * Waste_or_coproducts_percentage / (100-Waste_or_coproducts_percentage)
-    Lumber_species_properties['Total Wood Weight (odkg/m3)'] = Lumber_species_properties['Final Product Weight (odkg/m3)'] + Lumber_species_properties['Co Products Weight (odkg/m3)']
-    ###total green lumber required for 1m3 CLT panel production
-    Lumber_species_properties['Total Green Wood Vol Req (odkg/m3)'] = Lumber_species_properties['Total Wood Weight (odkg/m3)'] / Lumber_species_properties['Specific Gravity : Green'] / 1000
+
+    ##final denisty of the lumber used in CLT is for 12% moisture
+    ##calculate the weight of 1 m3 CLT
+    Lumber_species_properties['Final Product Weight (odkg/m3 CLT)'] = Lumber_species_properties['Specific Gravity : 12%'] * 1000
+
+    ###calcualte how much lumber per m3 CLT goes into waste products
+    Lumber_species_properties['Co Products Weight (odkg/m3 CLT)'] = Lumber_species_properties['Final Product Weight (odkg/m3 CLT)'] * Waste_or_coproducts_percentage / (100-Waste_or_coproducts_percentage)
+
+    ###calculate total lumber weight required per m3 CLT
+    Lumber_species_properties['Total Wood Weight (odkg/m3 CLT)'] = Lumber_species_properties['Final Product Weight (odkg/m3 CLT)'] + Lumber_species_properties['Co Products Weight (odkg/m3 CLT)']
+
+    ###total m3 12% lumber required for 1m3 CLT panel production
+    Lumber_species_properties['Total 12% Wood Vol Req (m3/m3 CLT)'] = Lumber_species_properties['Total Wood Weight (odkg/ m3 CLT)'] / Lumber_species_properties['Specific Gravity : 12%'] / 1000
+
+    ###total m3 green lumber required for 1m3 CLT panel production
+    Lumber_species_properties['Total Green Wood Vol Req (m3/m3 CLT)'] = Lumber_species_properties['Total Wood Weight (odkg/ m3 CLT)'] / Lumber_species_properties['Specific Gravity : Green'] / 1000
+
     return(Lumber_species_properties)
 ###################################################################################
 ###finds the feasible set of resources which can be used and returns the impacts of this lumber production
@@ -50,8 +64,7 @@ def calculate_lumber_impact(CLT_required,Filtered_GIS_Data, timber_type, CLT_Mil
     # this loop calculates the absolute distance factor between mill location and location of the resource based on coordinates
     for index, row in Filtered_GIS_Data.iterrows():
         if row['ForestType'] == timber_type:
-            Filtered_GIS_Data['Abs Distance Estimate'][index] = math.sqrt(float(
-                (CLT_Mill_location[0] - row['G1000_latdd']) ** 2 + (CLT_Mill_location[1] - row['G1000_longdd']) ** 2))
+            Filtered_GIS_Data['Abs Distance Estimate'][index] = math.sqrt(float((CLT_Mill_location[0] - row['G1000_latdd']) ** 2 + (CLT_Mill_location[1] - row['G1000_longdd']) ** 2))
 
     non_zero_distances = numpy.array(Filtered_GIS_Data['Abs Distance Estimate'])
     non_zero_distances = numpy.delete(non_zero_distances, numpy.argwhere(non_zero_distances == 0))

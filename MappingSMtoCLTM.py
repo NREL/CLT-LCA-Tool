@@ -22,7 +22,7 @@ gmaps.configure(api_key=apikey_text)
 
 ##load data
 Filtered_GIS_Data = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/SampleGISDataFiltered - Copy2.xlsx", sheet_name='SawmillTrial')
-Sawmills_data_Washington = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/mill2005w.xlsx",sheet_name='Washington')
+Sawmills_data_Washington = pd.read_excel("C:/Users/SATNOORK/Desktop/CLT Literature/mill2005w.xlsx", sheet_name='Washington')
 
 ### create a list to include sawmills of interest
 sawmill_list_grand = list()
@@ -38,12 +38,18 @@ Sawmill_CLTMill_distances = pd.DataFrame(columns=['Sawmill', 'Lat', 'Long', 'Dis
 ####add unique sawmill IDs to the dataframe
 Sawmill_CLTMill_distances.assign(Sawmill=sawmill_list_grand)
 
+
+###output a list with sawmill distance from the CLT mill###
 CLTMillLocation = ''
 for index, row in Sawmill_CLTMill_distances.iterrows():
     row['Lat'] = Sawmills_data_Washington.loc[Sawmills_data_Washington.MILL2005_1 == row['Sawmill'], 'LAT']
     row['Long'] = Sawmills_data_Washington.loc[Sawmills_data_Washington.MILL2005_1 == row['Sawmill'], 'LONG']
     Coordinates = str(row['Lat']) + ', ' + str(row['Long'])
-    Sawmills_data_Washington['Distance'][index] = calculate_distance(Coordinates, CLTMillLocation, apikey_text)
+    Sawmill_CLTMill_distances['Distance'][index] = calculate_distance(Coordinates, CLTMillLocation, apikey_text)
+
+avg_sawmill_CLT_mill_distance = Sawmill_CLTMill_distances['Distance'].mean()
+
+
 
 
 
