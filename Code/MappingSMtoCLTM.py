@@ -16,10 +16,10 @@ gmaps.configure(api_key=apikey_text)
 
 ##load data
 #TODO: Is this the correct sheet?
-Filtered_GIS_Data = pd.read_excel("C:/Users/SATNOORK/Documents/GitHub/CLT-LCA-Tool/SampleGISDataFiltered - Copy.xlsx", sheet_name='SawmillTrial') ##TODO: sheetname = Sheet 1?
+Filtered_GIS_Data = pd.read_excel(".../CLT-LCA-Tool/SampleGISDataFiltered - Copy.xlsx", sheet_name='SawmillTrial') ##TODO: sheetname = Sheet 1?
 #Sawmills_data_Washington = pd.read_excel("C:/Users/SATNOORK/Documents/GitHub/CLT-LCA-Tool/mill2005w.xlsx", sheet_name='Washington')
 ###dataset of sawmills in all states
-sawmills_dataset = pd.read_excel(("C:/Users/SATNOORK/Documents/GitHub/CLT-LCA-Tool/Mill Datasets/MasterDatasetSawMills.xlsx")
+sawmills_dataset = pd.read_excel((".../CLT-LCA-Tool/Mill Datasets/MasterDatasetSawMills.xlsx")
 
 ### create a list to include sawmills of interest
 sawmill_list_grand = list()

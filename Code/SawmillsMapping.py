@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 ###import api_key from text file and configure the key
 apikey_text = get_GM_API_Key()
 gmaps.configure(api_key=apikey_text)
-Sawmills_Data = pd.read_excel("C:/Users/SATNOORK/Documents/GitHub/CLT-LCA-Tool/Mill Datasets/MasterDatasetSawmills.xlsx")
+Sawmills_Data = pd.read_excel(".../CLT-LCA-Tool/Mill Datasets/Old/MasterDatasetSawmills.xlsx")
 states_list = ["WA", "AR"]
 
 Sawmills_WA = Sawmills_Data[Sawmills_Data["STATE"] == "WA"]
@@ -37,7 +37,7 @@ Sawmills_AR = Sawmills_Data[Sawmills_Data["STATE"] == "AR"]
 #Mills_AR = pd.read_excel('C:/Users/SATNOORK/Desktop/CLT Literature/Mill Datasets/mill2005south.xls', sheet_name='AR')
 
 ###rows having Douglas fir in Washington
-DFWA = pd.read_excel('C:/Users/SATNOORK/Documents/GitHub/CLT-LCA-Tool/Forest_GIS_Data_WA.xlsx')
+DFWA = pd.read_excel('.../CLT-LCA-Tool/Forest_GIS_Data_WA.xlsx')
 print(DFWA.head())
 ###rows having loblolly pine in Arkansas
 #LPAR = pd.read_excel('C:/Users/SATNOORK/Documents/GitHub/CLT-LCA-Tool/Forest_GIS_Data.xlsx', sheet_name='LPAR')
@@ -66,12 +66,11 @@ for index, row in Sawmills_WA.iterrows():
         if distance_f_m <= 200:
             Sawmills_WA.loc[index, "Total Area"] = previous_total_area + row_f["Area_km2"]
 
-
         if (distance_f_m > 200) & (distance_f_m <= 225):
             Sawmills_WA.loc[index, "Total Area"] = previous_total_area + 0.5 * row_f["Area_km2"]
             #print(Sawmills_WA["Total Area"].iloc[index_count])
-        if (distance_f_m > 225) & (distance_f_m <= 250):
-            Sawmills_WA.loc[index, "Total Area"] = previous_total_area + 0.1 * row_f["Area_km2"]
+        #if (distance_f_m > 225) & (distance_f_m <= 250):
+            #Sawmills_WA.loc[index, "Total Area"] = previous_total_area + 0.1 * row_f["Area_km2"]
 
         if Sawmills_WA["Total Area"].iloc[index_count] >= 5:
             #print(Sawmills_WA["Total Area"].iloc[index_count])
@@ -86,7 +85,7 @@ for index, row in Sawmills_WA.iterrows():
 
     index_count = index_count + 1
 
-Sawmills_WA.to_excel("C:/Users/SATNOORK/Documents/GitHub/CLT-LCA-Tool/Mill Datasets/DFWAcalculateddata.xlsx")
+Sawmills_WA.to_excel(".../CLT-LCA-Tool/Mill Datasets/DFWAcalculateddata.xlsx")
 
 print("DONE DONE DONE")
 

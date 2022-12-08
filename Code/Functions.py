@@ -27,3 +27,19 @@ def calculate_energy_impacts(input_variable, input_sheet, lookup_column, lookup_
 
     return(d,e,f,g,h,i)
 
+def calculate_sawmill_CLT_mill_distance(species, mill_state, CLT_mill_lat, CLT_mill_long, apikey):
+    from Google_Maps_Functions import get_GM_API_Key
+    from Google_Maps_Functions import calculate_distance
+    sawmills_by_species_processed_data  = pd.read_excel('.../CLT-LCA-Tool/Mill Datasets/state_timber_sawmill_dataset_' + mill_state + '.xlsx')
+    sawmills_filtered_by_species = sawmills_by_species_processed_data[sawmills_by_species_processed_data["Timber_Type"] == species]
+    sawmills_filtered_by_species["Dist_i"] = 0
+    for index, row in sawmills_filtered_by_species.iterrows():
+        saw_mill_coordinates = str(row['LAT']) + ', ' + str(row['LON'])
+        #mill_lat = row['LAT']
+        #mill_long = row['LON']
+        #print(row["Mill_ID_U"])
+        clt_mill_coordinates = str(CLT_mill_lat) + ', ' + str(CLT_mill_long)
+        sawmill_clt_dist_i = calculate_distance(saw_mill_coordinates, clt_mill_coordinates, apikey)
+        sawmills_filtered_by_species.iloc[index]["Dist_i"] = sawmill_clt_dist_i
+
+    avg_dist_sawmill_CLT_mill = sawmills_filtered_by_species["Dist_i"].mean()
